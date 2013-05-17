@@ -7,32 +7,15 @@
 
 using namespace Botan;
 
-#define OPTSTR "f:p:D"
 #define KEY_SZ	32
 #define IV_SZ	16
+#define SALT_SZ	16
 #define PBKDF_STR	"PBKDF2(SHA-256)"
 #define PBKDF_ITER	10000
 #define CIPHER_TYPE	"AES-256"
 #define CIPHER_MODE	"/CBC"
 #define PASS_PREFIX	"BLK"
 #define IVL_PREFIX	"IVL"
-#define ENC_FILE_EXT	".enc"
-#define DEC_FILE_EXT	".dec"
-
-const struct option longopts[] =
-{
-	{"file", required_argument, NULL, 'f'},
-	{"pass", required_argument, NULL, 'p'},
-	{"decrypt", no_argument, NULL, 'D'},
-};
-
-void print_usage(char *program_name)
-{
-	printf("Usage: %s\n"\
-		"\t-f,,--file=INPUT_FILE\tInput file with cleartext\n"\
-		"\t-p,--pass=PASSPHRASE\tPassphrase\n"\
-		"\t-D,--decrypt\tFor decryption, encrypion is default", program_name);
-}
 
 std::string b64_encode(const SecureVector<byte>& in)
 {
@@ -58,7 +41,7 @@ void aes_encrypt(std::ifstream& in, std::ofstream& out, std::string passphrase)
 		AutoSeeded_RNG rng;
 
 		/* Generate salt randomly */
-		SecureVector<byte> salt = rng.random_vec(KEY_SZ/2);
+		SecureVector<byte> salt = rng.random_vec(SALT_SZ);
 		std::cout << b64_encode(salt);
 		
 		/* Generate AES key from passphrase */
@@ -87,7 +70,6 @@ void aes_encrypt(std::ifstream& in, std::ofstream& out, std::string passphrase)
 
 void aes_decrypt(std::ifstream& in, std::ofstream& out, std::string passphrase)
 {
-	std::cout << "decrypt";
 	try
 	{
 		LibraryInitializer init;
@@ -122,62 +104,4 @@ void aes_decrypt(std::ifstream& in, std::ofstream& out, std::string passphrase)
 	{
 		std::cerr << "Exception:" << e.what() << "\n";
 	}
-}
-
-
-int main(int argc, char **argv)
-{
-	int opt, longindex;
-	std::stringstream ss;
-	std::string filename = "", passphrase = "";
-	bool decrypt = false;
-
-	while ((opt = getopt_long(argc, argv, OPTSTR, longopts, &longindex)) != -1)
-	{
-		switch (opt)
-		{
-			case 'f':
-				filename = std::string(optarg);
-				break;
-			case 'p':
-				passphrase = std::string(optarg);
-				break;
-			case 'D':
-				decrypt = true;
-				break;
-			default:
-				print_usage(argv[0]);
-		}
-	}
-
-	if(filename.empty())
-	{
-		std::cerr <<  "Please add -f,--file=INPUT_FILE\n";
-		exit(1);
-	}
-	if (passphrase.empty())
-	{
-		std::cerr << "Please add -p,--pass=PASSPHRASE\n";
-		exit(1);
-	}
-
-	std::ifstream in(filename.c_str(), std::ios::binary);
-	if (!in)
-	{
-		std::cerr << "Couldn't open input file\n";
-		exit(1);
-	}
-	std::string extension = decrypt? DEC_FILE_EXT : ENC_FILE_EXT;
-	std::ofstream out((filename + extension).c_str());
-	if (!out)
-	{
-		std::cerr << "Couldn't open output file\n";
-		exit(1);
-	}
-	
-	if(!decrypt)
-		aes_encrypt(in, out, passphrase);
-	else
-		aes_decrypt(in, out, passphrase);
-	return 0;
 }
