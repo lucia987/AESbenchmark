@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include "util.h"
+#include "base64.h"
 
 char* init_gcrypt(gcry_cipher_hd_t& handle, std::string passphrase, std::string user_salt)
 {
@@ -17,15 +18,17 @@ char* init_gcrypt(gcry_cipher_hd_t& handle, std::string passphrase, std::string 
 
 	if (user_salt.empty())
 	{
-
 		/* Generate salt randomly */
+		std::cout<<"salt "<<salt<<"\n";
 		gcry_randomize(salt, sizeof(salt), GCRY_WEAK_RANDOM);
-		std::cout << salt;
+		std::cout << base64_encode(salt, SALT_SZ);
 	}
 	else
 	{
 		/* Copy salt from user */
-		memcpy(salt, user_salt.c_str(), SALT_SZ);
+		std::string tmpsalt = base64_decode(user_salt);
+		memcpy(salt, tmpsalt.c_str(), SALT_SZ);
+		std::cout<<"salt "<<tmpsalt<<"\n";
 	}
 
 	/* Generate key from passhrase */

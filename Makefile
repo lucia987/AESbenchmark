@@ -20,7 +20,7 @@ aes-botan: aes-botan.o main.o
 aes-botan.o: aes-botan.cpp
 	$(CC) -c $(BOTAN_CPPFLAGS) -o $@ $^
 
-aes-gcrypt: aes-gcrypt.o main.o
+aes-gcrypt: aes-gcrypt.o main.o base64.o
 	$(CC) -o $@ $^ $(GCRYPT_LDFLAGS)
 
 aes-gcrypt.o: aes-gcrypt.cpp
@@ -28,5 +28,7 @@ aes-gcrypt.o: aes-gcrypt.cpp
 
 main.o: main.cpp
 
+base64.o: base64.cpp
+
 clean:
-	rm *.o aes-botan aes-dcrypt
+	rm *.o aes-botan aes-gcrypt
