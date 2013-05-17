@@ -2,6 +2,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <fstream>
+#include "util.h"
 
 #define OPTSTR "f:p:D"
 #define ENC_FILE_EXT	".enc"
@@ -24,7 +25,6 @@ void print_usage(char *program_name)
 		"\t-p,--pass=PASSPHRASE\tPassphrase\n"\
 		"\t-D,--decrypt\tFor decryption, encrypion is default", program_name);
 }
-
 
 int main(int argc, char **argv)
 {
@@ -52,29 +52,15 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if(filename.empty())
-	{
-		std::cerr <<  "Please add -f,--file=INPUT_FILE\n";
-		exit(1);
-	}
-	if (passphrase.empty())
-	{
-		std::cerr << "Please add -p,--pass=PASSPHRASE\n";
-		exit(1);
-	}
+	DIE(filename.empty(), "Please add -f,--file=INPUT_FILE");
+	DIE(passphrase.empty(), "Please add -p,--pass=PASSPHRASE");
+
 	std::ifstream in(filename.c_str(), std::ios::binary);
-	if (!in)
-	{
-		std::cerr << "Couldn't open input file\n";
-		exit(1);
-	}
+	DIE(!in, "Couldn't open input file");
+
 	std::string extension = decrypt? DEC_FILE_EXT : ENC_FILE_EXT;
 	std::ofstream out((filename + extension).c_str());
-	if (!out)
-	{
-		std::cerr << "Couldn't open output file\n";
-		exit(1);
-	}
+	DIE(!out, "Couldn't open output file");
 	
 	if(!decrypt)
 		aes_encrypt(in, out, passphrase);

@@ -4,18 +4,13 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include "util.h"
 
 using namespace Botan;
 
-#define KEY_SZ	32
-#define IV_SZ	16
-#define SALT_SZ	16
-#define PBKDF_STR	"PBKDF2(SHA-256)"
-#define PBKDF_ITER	10000
+#define PBKDF_STR	"PBKDF2(SHA-1)"
 #define CIPHER_TYPE	"AES-256"
 #define CIPHER_MODE	"/CBC"
-#define PASS_PREFIX	"BLK"
-#define IVL_PREFIX	"IVL"
 
 std::string b64_encode(const SecureVector<byte>& in)
 {
@@ -45,11 +40,11 @@ void aes_encrypt(std::ifstream& in, std::ofstream& out, std::string passphrase)
 		std::cout << b64_encode(salt);
 		
 		/* Generate AES key from passphrase */
-		OctetString aes_key = pbkdf->derive_key(KEY_SZ, PASS_PREFIX + passphrase,
+		OctetString aes_key = pbkdf->derive_key(KEY_SZ, KEY_PREFIX + passphrase,
 			&salt[0], salt.size(), PBKDF_ITER);
 
 		/* Generate IV from passphrase */
-		InitializationVector iv = pbkdf->derive_key(IV_SZ, IVL_PREFIX + passphrase,
+		InitializationVector iv = pbkdf->derive_key(IV_SZ, IV_PREFIX + passphrase,
 			&salt[0], salt.size(), PBKDF_ITER);
 
 		/* Add AES/CBC filter to a Botan::Pipe */
@@ -83,11 +78,11 @@ void aes_decrypt(std::ifstream& in, std::ofstream& out, std::string passphrase)
 		SecureVector<byte> salt = b64_decode(salt_str);
 		
 		/* Generate AES key from passphrase */
-		OctetString aes_key = pbkdf->derive_key(KEY_SZ, PASS_PREFIX + passphrase,
+		OctetString aes_key = pbkdf->derive_key(KEY_SZ, KEY_PREFIX + passphrase,
 			&salt[0], salt.size(), PBKDF_ITER);
 
 		/* Generate IV from passphrase */
-		InitializationVector iv = pbkdf->derive_key(IV_SZ, IVL_PREFIX + passphrase,
+		InitializationVector iv = pbkdf->derive_key(IV_SZ, IV_PREFIX + passphrase,
 			&salt[0], salt.size(), PBKDF_ITER);
 
 		/* Add AES/CBC filter to a Botan::Pipe */
