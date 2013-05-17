@@ -19,7 +19,6 @@ char* init_gcrypt(gcry_cipher_hd_t& handle, std::string passphrase, std::string 
 	if (user_salt.empty())
 	{
 		/* Generate salt randomly */
-		std::cout<<"salt "<<salt<<"\n";
 		gcry_randomize(salt, sizeof(salt), GCRY_WEAK_RANDOM);
 		std::cout << base64_encode(salt, SALT_SZ);
 	}
@@ -28,7 +27,6 @@ char* init_gcrypt(gcry_cipher_hd_t& handle, std::string passphrase, std::string 
 		/* Copy salt from user */
 		std::string tmpsalt = base64_decode(user_salt);
 		memcpy(salt, tmpsalt.c_str(), SALT_SZ);
-		std::cout<<"salt "<<tmpsalt<<"\n";
 	}
 
 	/* Generate key from passhrase */
