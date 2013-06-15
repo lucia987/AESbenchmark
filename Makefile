@@ -42,4 +42,4 @@ main.o: main.cpp
 base64.o: base64.cpp
 
 clean:
-	rm *.o aes-botan aes-gcrypt
+	rm *.o aes-botan aes-gcrypt aes-cryptopp
