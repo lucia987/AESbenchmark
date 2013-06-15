@@ -6,7 +6,10 @@
 #include "util.h"
 #include "base64.h"
 
-char* init_gcrypt(gcry_cipher_hd_t& handle, std::string passphrase, std::string user_salt)
+char* init_gcrypt_key_iv(
+	gcry_cipher_hd_t& handle,
+	std::string passphrase,
+	std::string user_salt)
 {
 	unsigned char	salt[SALT_SZ],
 			key[KEY_SZ],
@@ -25,8 +28,8 @@ char* init_gcrypt(gcry_cipher_hd_t& handle, std::string passphrase, std::string 
 	else
 	{
 		/* Copy salt from user */
-		std::string tmpsalt = base64_decode(user_salt);
-		memcpy(salt, tmpsalt.c_str(), SALT_SZ);
+		std::string tmp_salt = base64_decode(user_salt);
+		memcpy(salt, tmp_salt.c_str(), SALT_SZ);
 	}
 
 	/* Generate key from passhrase */
@@ -65,6 +68,7 @@ void aes_encrypt(std::ifstream& in, std::ofstream& out, std::string passphrase)
 	/* Determine input file size */
 	in.seekg(0, std::ios::end);
 	size = in.tellg();
+	size = (size % BLOCK_SZ)? (size + (BLOCK_SZ - size % BLOCK_SZ)) : size;
 	
 	/* Define plain and cipher strings according to input file size */
 	char *plain = new char[size];
@@ -75,12 +79,15 @@ void aes_encrypt(std::ifstream& in, std::ofstream& out, std::string passphrase)
 	std::streambuf* raw_buffer = in.rdbuf();
 	raw_buffer->sgetn(plain, size);
 
-	init_gcrypt(handle, passphrase, std::string(""));
+	init_gcrypt_key_iv(handle, passphrase, std::string(""));
 
-	gcry_cipher_encrypt(handle, (unsigned char *)&cipher[0], size,
+	ret = gcry_cipher_encrypt(handle, (unsigned char *)&cipher[0], size,
 		(unsigned char *)&plain[0], size);
+	DIE(ret, "gcry_cipher_encrypt");
 
 	gcry_cipher_close(handle);
+	out << cipher;
+
 	delete [] plain;
 	delete [] cipher;
 }
@@ -106,13 +113,15 @@ void aes_decrypt(std::ifstream& in, std::ofstream& out, std::string passphrase)
 	raw_buffer->sgetn(cipher, size);
 
 	std::cin >> saltstr;
-	init_gcrypt(handle, passphrase, saltstr);
+	init_gcrypt_key_iv(handle, passphrase, saltstr);
 
-	gcry_cipher_decrypt(handle, (unsigned char *)&plain[0], size,
+	ret = gcry_cipher_decrypt(handle, (unsigned char *)&plain[0], size,
 		(unsigned char *)&cipher[0], size);
+	DIE(ret, "gcry_cipher_decrypt");
 
 	gcry_cipher_close(handle);
 	out << plain;
+
 	delete [] plain;
 	delete [] cipher;
 }
